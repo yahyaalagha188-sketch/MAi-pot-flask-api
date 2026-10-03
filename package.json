@@ -1,0 +1,9 @@
+{
+  "name": "mai-pot-flask-api",
+  "version": "1.0.0",
+  "description": "Advanced Flask API server - Universal AI assistant for MAi pot financial platform powered by GPT-4o",
+  "private": true,
+  "engines": {
+    "python": "3.11.7"
+  }
+}
