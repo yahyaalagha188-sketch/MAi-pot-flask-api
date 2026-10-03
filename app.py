@@ -12,6 +12,14 @@ DEVELOPER_NAME = "Yahya.Kurdistan"
 
 app = Flask(__name__)
 
+# ✅ CORS Support
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key) if api_key else None
 
@@ -60,7 +68,7 @@ Core responsibilities:
 
 You work inside a custom financial platform called MAi pot.
 Your tone should be confident, insightful, professional, and human.
-""""
+"""
 
 
 def build_chat_completion(user_text: str, image_url: str = None):
@@ -113,13 +121,25 @@ def health():
     })
 
 
-@app.route("/api/chat", methods=["POST", "GET"])
+@app.route("/api/chat", methods=["POST", "GET", "OPTIONS"])
 def chat_api():
+    # ✅ Handle CORS preflight
+    if request.method == "OPTIONS":
+        return "", 200
+
     if request.method == "GET":
         return jsonify({
             "status": "ok",
             "message": "Use POST with JSON data to talk to the AI assistant."
         })
+
+    # ✅ Validate API key first
+    if client is None:
+        return jsonify({
+            "success": False,
+            "error": "OpenAI API key not configured",
+            "message": "OPENAI_API_KEY environment variable is missing or invalid."
+        }), 500
 
     payload = request.get_json(silent=True) or {}
     text = payload.get("text") or payload.get("message") or payload.get("prompt") or ""
@@ -151,7 +171,7 @@ def chat_api():
         "developer": DEVELOPER_NAME,
         "reply": reply,
         "language_detected": "multilingual",
-    })
+    }), 200
 
 
 def keep_alive():
@@ -161,8 +181,9 @@ def keep_alive():
 
     while True:
         try:
-            requests.get(render_url, timeout=20)
-        except Exception:
+            requests.get(render_url, timeout=10)
+        except Exception as e:
+            # Silently ignore errors, just continue
             pass
         time.sleep(300)
 
